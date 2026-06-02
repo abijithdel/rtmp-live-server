@@ -1,0 +1,3 @@
+How to run the code 
+setp 1 -> create 'media' folder for the root folder
+setp 2 -> run npm start if dev(npm run dev)
