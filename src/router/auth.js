@@ -4,6 +4,6 @@ const { Register, Login } = require('../auth/main')
 
 router.post('/register', Register);
 
-router.post('/login', Login);
+router.get('/login', Login);
 
 module.exports = router;

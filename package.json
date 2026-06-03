@@ -14,8 +14,11 @@
   "dependencies": {
     "express": "^5.2.1",
     "morgan": "^1.10.1",
+    "multer": "^2.1.1",
     "node-media-server": "^2.7.4",
     "nodemon": "^3.1.14",
+    "pg": "^8.21.0",
+    "random-string-generator": "^1.0.7",
     "socket.io": "^4.8.3"
   }
 }

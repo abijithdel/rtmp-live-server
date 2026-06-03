@@ -1,5 +1,6 @@
-const NodeMediaServer = require('node-media-server');
-const config = require('../rtmpConfig');
+const NodeMediaServer = require("node-media-server");
+const config = require("../rtmpConfig");
+const { getAStreamKey } = require("../live/utility");
 
 const nms = new NodeMediaServer(config);
 
@@ -9,23 +10,51 @@ const nms = new NodeMediaServer(config);
 |--------------------------------------------------------------------------
 */
 
-const StreamKeys = [
-    "qLlgMhnELBFQHxaQeqSI"
-];
+const StreamKeys = ["qLlgMhnELBFQHxaQeqSI"];
 
-nms.on('prePublish', (id, StreamPath, args) => {
-    console.log('STREAM PATH:', StreamPath);
-    const streamKey = StreamPath.split('/')[2];
-    console.log('STREAM NAME:', streamKey);
-    
-    const isValid = StreamKeys.includes(streamKey);
-    if (!isValid) {
-        console.log(`Rejecting invalid stream key: ${streamKey}`);
-        let session = nms.getSession(id);
-        if (session) session.reject();
-    } else {
-        console.log(`Accepted stream with key: ${streamKey}`);
+nms.on("prePublish", async (id, StreamPath, args) => {
+  let session;
+
+  try {
+    console.log("STREAM PATH:", StreamPath);
+
+    // safer extraction
+    const streamKey = StreamPath?.split("/")?.pop();
+    console.log("STREAM KEY:", streamKey);
+
+    session = nms.getSession(id);
+    if (!session) return;
+
+    // invalid format check
+    if (!streamKey) {
+      console.log("Rejecting: missing stream key");
+      session.reject();
+      return;
     }
+
+    // DB check
+    const keyFromDB = await getAStreamKey(streamKey);
+
+    // reject if not found
+    if (!keyFromDB || !keyFromDB.status) {
+      console.log(`Rejecting invalid stream key: ${streamKey}`);
+      session.reject();
+      return;
+    }
+
+    // optional extra safety check (if you still want compare)
+    if (keyFromDB.key !== streamKey) {
+      console.log(`Rejecting mismatch stream key: ${streamKey}`);
+      session.reject();
+      return;
+    }
+
+    console.log(`Accepted stream with key: ${streamKey}`);
+  } catch (err) {
+    console.error("prePublish error:", err.message);
+
+    if (session) session.reject();
+  }
 });
 
 /*
@@ -34,16 +63,16 @@ nms.on('prePublish', (id, StreamPath, args) => {
 |--------------------------------------------------------------------------
 */
 
-nms.on('postPublish', (id, StreamPath, args) => {
-    const streamKey = StreamPath.split('/')[2];
-    console.log('Running...');
-    console.log('STREAM PATH:', StreamPath);
-    console.log('STREAM NAME:', streamKey);
-    
-    // Note: Node Media Server automatically spawns FFmpeg based on the 
-    // `trans` configuration in rtmpConfig.js (hls: true). 
-    // Do NOT manually spawn FFmpeg here, as it will cause duplicate processes
-    // and file write conflicts.
+nms.on("postPublish", (id, StreamPath, args) => {
+  const streamKey = StreamPath.split("/")[2];
+  console.log("Running...");
+  console.log("STREAM PATH:", StreamPath);
+  console.log("STREAM NAME:", streamKey);
+
+  // Note: Node Media Server automatically spawns FFmpeg based on the
+  // `trans` configuration in rtmpConfig.js (hls: true).
+  // Do NOT manually spawn FFmpeg here, as it will cause duplicate processes
+  // and file write conflicts.
 });
 
 /*
@@ -52,12 +81,12 @@ nms.on('postPublish', (id, StreamPath, args) => {
 |--------------------------------------------------------------------------
 */
 
-nms.on('donePublish', (id, StreamPath, args) => {
-    const streamKey = StreamPath.split('/')[2];
-    console.log('================================');
-    console.log('STREAM ENDED');
-    console.log('STREAM PATH:', StreamPath);
-    console.log('STREAM NAME:', streamKey);
+nms.on("donePublish", (id, StreamPath, args) => {
+  const streamKey = StreamPath.split("/")[2];
+  console.log("================================");
+  console.log("STREAM ENDED");
+  console.log("STREAM PATH:", StreamPath);
+  console.log("STREAM NAME:", streamKey);
 });
 
 /*
