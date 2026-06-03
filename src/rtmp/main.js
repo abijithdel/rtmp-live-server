@@ -1,6 +1,6 @@
 const NodeMediaServer = require("node-media-server");
 const config = require("../rtmpConfig");
-const { getAStreamKey } = require("../live/utility");
+const { getAStreamKey, changeStreamStatus } = require("../live/utility");
 
 const nms = new NodeMediaServer(config);
 
@@ -48,7 +48,7 @@ nms.on("prePublish", async (id, StreamPath, args) => {
       session.reject();
       return;
     }
-
+    changeStreamStatus('running', streamKey)
     console.log(`Accepted stream with key: ${streamKey}`);
   } catch (err) {
     console.error("prePublish error:", err.message);
@@ -87,6 +87,7 @@ nms.on("donePublish", (id, StreamPath, args) => {
   console.log("STREAM ENDED");
   console.log("STREAM PATH:", StreamPath);
   console.log("STREAM NAME:", streamKey);
+  changeStreamStatus('closed', streamKey)
 });
 
 /*

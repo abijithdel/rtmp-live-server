@@ -1,6 +1,6 @@
 const rstring = require("random-string-generator");
 const pool = require("../dbConfig");
-const { getAkey } = require("../db/query");
+const { getAkey, updateLiveStatus } = require("../db/query");
 
 const createStreamKey = async () => {
   const key = rstring(18);
@@ -25,4 +25,22 @@ const getAStreamKey = async (Key) => {
     return { status: false, message: error.message, key: "" };
   }
 };
-module.exports = { createStreamKey, getAStreamKey };
+
+const changeStreamStatus = async (status, key) => {
+  try {
+    const result = await pool.query(updateLiveStatus, [status, key]);
+
+    if (result.rowCount === 0) {
+      console.log("No stream found with that key");
+      return false;
+    }
+
+    console.log("Stream status updated");
+    return true;
+  } catch (error) {
+    console.error(error.message);
+    return false;
+  }
+};
+
+module.exports = { createStreamKey, getAStreamKey, changeStreamStatus };
