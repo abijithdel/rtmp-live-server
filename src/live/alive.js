@@ -3,7 +3,7 @@ const { getalive } = require('../db/query')
 
 const getAStreamData = async (req, res) => {
     try {
-        const { id } = req.body
+        const { id } = req.query
         const result = await pool.query(getalive,[id])
         res.status(200).json({ data: result.rows[0] })
     } catch (error) {
