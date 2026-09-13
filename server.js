@@ -5,8 +5,11 @@ const { Server } = require("socket.io");
 const morgan = require("morgan");
 const path = require("path");
 const cors = require("cors");
+const { InintPublicDIR } = require('./src/middleware/publicIniter')
 require("./src/rtmp/main");
 require("./src/dbConfig");
+
+InintPublicDIR()
 
 const app = express();
 const server = createServer(app);
